@@ -1,10 +1,18 @@
-{Adapter, Robot} = require "hubot"
+{Adapter, Robot, TextMessage} = require "hubot"
 EventEmitter = require('events').EventEmitter
 crypto = require('crypto')
 http = require('http')
 io = require('socket.io-client')
 
 class WomptBot extends Adapter
+   send: (user, strings...) ->
+      if strings.length > 0
+         @bot.say strings.shift()
+         @send user, strings...
+
+   reply: (user, strings...) ->
+      @send user, strings.map((str) -> "@#{user}: #{str}")...
+
    run: ->
       self = @
       
@@ -15,6 +23,9 @@ class WomptBot extends Adapter
          nick:   process.env.HUBOT_WOMPT_NICK or @robot.name
 
       bot = new WomptConnector(options, @robot)
+
+      bot.on "message", (who, message) ->
+         self.receive new TextMessage(who, message)
 
       @bot = bot
 
@@ -37,11 +48,16 @@ class WomptConnector extends EventEmitter
 
       @connect()
 
-   dispatch: (message) ->
+   say: (message) =>
+      @chat?.json.send {
+         action: "post"
+         msg: message
+      }
+
+   dispatch: (message) =>
       if message.action?
          if message.action == "message"
-            # TODO: emit event?
-            console.log "MESSAGE: #{message.msg}"
+            @emit "message", message.from.name, message.msg
 
    generateURL: ->
       timestamp = Math.round(new Date().getTime() / 1000)
