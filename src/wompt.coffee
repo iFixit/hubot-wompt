@@ -18,6 +18,7 @@ class WomptBot extends Adapter
       
       options =
          host:   process.env.HUBOT_WOMPT_HOST or "wompt.com"
+         port:   process.env.HUBOT_WOMPT_PORT or 80
          room:   process.env.HUBOT_WOMPT_ROOM
          secret: process.env.HUBOT_WOMPT_SECRET
          nick:   process.env.HUBOT_WOMPT_NICK or @robot.name
@@ -42,6 +43,7 @@ class WomptConnector extends EventEmitter
          throw new Error("HUBOT_WOMPT_SECRET is not defined.")
       
       @host   = options.host
+      @port   = options.port
       @room   = options.room
       @secret = options.secret
       @nick   = options.nick
@@ -69,7 +71,7 @@ class WomptConnector extends EventEmitter
       chatURL = baseURL + secureURL + "&secure=#{secureToken}"
 
    join: (connectorID) ->
-      @chat = io.connect("http://#{@host}")
+      @chat = io.connect("http://#{@host}:#{@port}")
       @chat.on "connect", =>
          console.log "Connected to Wompt."
          @chat.json.send {
@@ -92,7 +94,7 @@ class WomptConnector extends EventEmitter
 
       options =
          host: @host
-         port: 80
+         port: @port
          path: @generateURL()
 
       getter = http.get options, (response) ->
